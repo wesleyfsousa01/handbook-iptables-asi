@@ -2,14 +2,14 @@
 %\usepackage {psfig,epsfig} % para incluir figuras em PostScript
 \usepackage{amsfonts,amsthm,amsopn,amssymb,latexsym}
 \usepackage{graphicx}
+% XeLaTeX já suporta UTF-8 nativamente
 \usepackage[T1]{fontenc}
 \usepackage[brazil]{babel}
 \usepackage{geometry}
-\usepackage[latin1]{inputenc}
 \usepackage[intlimits]{amsmath}
 \usepackage{listings}
 \usepackage{xcolor}
-\usepackage{hyperref}
+%\usepackage{hyperref}
 
 % Configuração para código
 \lstset{
@@ -33,42 +33,37 @@
 \newcommand{\contcaption}[1]{\vspace*{-0.6\baselineskip}\begin{center}#1\end{center}\vspace*{-0.6\baselineskip}}
 %=======================================================================
 % Dimensões da página
-\usepackage{a4}                       % tamanho da página
-\setlength{\textwidth}{16.0cm}        % largura do texto
-\setlength{\textheight}{9.0in}        % tamanho do texto (sem head, etc)
+\geometry{
+    a4paper,
+    margin=2.5cm,
+    top=3cm,
+    bottom=2.5cm,
+    left=2.5cm,
+    right=2.5cm
+}
 \renewcommand{\baselinestretch}{1.15} % espaçamento entre linhas
-\addtolength{\topmargin}{-1cm}        % espaço entre o head e a margem
-\setlength{\oddsidemargin}{-0.1cm}    % espaço entre o texto e a margem
        
 % Ser indulgente no preenchimento das linhas
 \sloppy
  
 \begin{document}
 
-\pagestyle {empty}
+\pagestyle{plain}
+\setlength{\parindent}{0pt}
+\setlength{\parskip}{6pt}  
 
-% Páginas iniciais
-
-\newpage
-
-%\tableofcontents
-
-% Numeração em romanos para páginas iniciais (sumários, listas, etc)
-%\pagenumbering {roman}
-\pagestyle {plain}
-
-\setcounter{page}{0} \pagenumbering{arabic}
-
-\setlength{\parindent}{0in}  %espaco entre paragrafo e margem 
-% Espaçamento entre parágrafos
-\parskip 5pt  
-
-\center {\huge \textbf{Capítulo 7 - Servidor Firewall (iptables) e Aplicações}}
-\center {\textit{Autor: Grupo ASI - IFG Câmpus Formosa}}
+\begin{center}
+{\Large \textbf{Capítulo 7 - Servidor Firewall e Aplicações}}
+\end{center}
+\begin{center}
+{\textit{Grupo ASI - IFG Câmpus Formosa}}
+\end{center}
 
 \section {Ficha Técnica}  
 
-\begin{tabular}{|c|c|}
+\begin{table}[h]
+\centering
+\begin{tabular}{|p{3cm}|p{10cm}|}
 	\hline
 	\textbf{Serviço} & \textbf{Descrição}\\\hline 
 	Método de Comunicação & Protocolo TCP/UDP, portas configuráveis (22, 80, 443, etc.) \\\hline
@@ -76,6 +71,8 @@
 	Pacote para instalação & iptables (já incluído no kernel Linux), iptables-persistent\\\hline
 	Script de controle & /etc/init.d/netfilter-persistent, systemctl status iptables\\\hline
 \end{tabular}
+\caption{Ficha Técnica do Servidor iptables}
+\end{table}
 
 \section{Descrição do Servidor}
 

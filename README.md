@@ -16,15 +16,19 @@ O capítulo 7 foi desenvolvido com foco em:
 ## Estrutura do Projeto
 
 ```
-template-escrita-handbook/
-├── modelo-handbook.tex          # Arquivo principal do documento
+handbook-iptables-asi/
+├── modelo-handbook.tex          # Arquivo principal do documento LaTeX
 ├── bibliografia.bib             # Referências bibliográficas
-├── fig/                         # Pasta com figuras
+├── .gitignore                   # Configuração para ignorar arquivos auxiliares
+├── fig/                         # Pasta com figuras e imagens
+├── docs/                        # Pasta para documentação adicional
+├── scripts/                     # Scripts de exemplo e configuração
+│   ├── firewall-basic.sh        # Configuração básica de firewall
+│   ├── firewall-advanced.sh     # Configuração avançada
+│   ├── backup-rules.sh          # Script de backup e restauração
+│   └── firewall-config.conf     # Arquivo de configuração
 ├── README.md                    # Este arquivo
-└── scripts/                     # Scripts de exemplo
-    ├── firewall-basic.sh        # Configuração básica de firewall
-    ├── firewall-advanced.sh     # Configuração avançada
-    └── backup-rules.sh          # Script de backup
+└── INSTRUCOES_GRUPO.md          # Instruções específicas do grupo
 ```
 
 ## Como Compilar o Documento
@@ -44,26 +48,17 @@ Para compilar o documento LaTeX, você precisa ter instalado:
    - Overleaf (online)
    - VS Code com extensão LaTeX Workshop
 
-### Compilação
+### Compilação Recomendada
 
-#### No Linux:
+**⚠️ IMPORTANTE**: Este projeto foi configurado para usar **XeLaTeX** devido ao suporte nativo para UTF-8 e caracteres especiais.
+
+#### Comando de Compilação:
 ```bash
-# Instalar TeX Live
-sudo apt-get install texlive-full
-
-# Compilar o documento
-pdflatex modelo-handbook.tex
+xelatex modelo-handbook.tex
 ```
 
-#### No Windows:
+#### Alternativa (se necessário):
 ```bash
-# Após instalar MiKTeX, abrir o prompt de comando
-pdflatex modelo-handbook.tex
-```
-
-#### No macOS:
-```bash
-# Após instalar MacTeX
 pdflatex modelo-handbook.tex
 ```
 
@@ -72,9 +67,33 @@ pdflatex modelo-handbook.tex
 Para referências e índice, pode ser necessário compilar múltiplas vezes:
 
 ```bash
-pdflatex modelo-handbook.tex
-pdflatex modelo-handbook.tex
+xelatex modelo-handbook.tex
+xelatex modelo-handbook.tex
 ```
+
+### Arquivos Gerados
+
+Após a compilação, serão gerados:
+- `modelo-handbook.pdf` - Documento final (7 páginas)
+- `modelo-handbook.aux` - Arquivo auxiliar (ignorado pelo .gitignore)
+- `modelo-handbook.log` - Log da compilação (ignorado pelo .gitignore)
+
+## Configuração do Projeto
+
+### .gitignore
+
+O projeto inclui um `.gitignore` configurado para:
+- Arquivos auxiliares do LaTeX (`.aux`, `.log`, `.out`, etc.)
+- Arquivos temporários e de backup
+- Arquivos do sistema operacional
+- Arquivos de editores/IDEs
+- Arquivos de teste
+
+### Encoding e Caracteres Especiais
+
+- **Encoding**: UTF-8 nativo (XeLaTeX)
+- **Caracteres especiais**: Suporte completo para acentos e caracteres portugueses
+- **Fontes**: Configuradas automaticamente pelo XeLaTeX
 
 ## Scripts de Exemplo
 
@@ -92,6 +111,13 @@ chmod +x scripts/firewall-basic.sh
 sudo ./scripts/firewall-basic.sh
 ```
 
+### Scripts Disponíveis:
+
+- `firewall-basic.sh` - Configuração básica de firewall
+- `firewall-advanced.sh` - Configuração avançada com proteções
+- `backup-rules.sh` - Backup e restauração de regras
+- `firewall-config.conf` - Arquivo de configuração
+
 ## Conteúdo do Capítulo
 
 ### Seções Principais:
@@ -106,12 +132,30 @@ sudo ./scripts/firewall-basic.sh
 ### Tópicos Abordados:
 
 - Conceitos de firewall e filtragem de pacotes
-- Tabelas e cadeias do iptables
+- Tabelas e cadeias do iptables (filter, nat, mangle)
 - Configuração de NAT e roteamento
-- Proteção contra ataques comuns
+- Proteção contra ataques comuns (SYN flood, port scanning)
 - Logging e monitoramento
 - Scripts de backup e restauração
 - Boas práticas de segurança
+- Configurações para ambientes de produção
+
+## Limpeza e Manutenção
+
+### Arquivos Removidos
+
+Durante a limpeza do projeto, foram removidos:
+- Arquivos de teste temporários
+- Arquivos auxiliares do LaTeX
+- Arquivos duplicados ou desnecessários
+
+### Estrutura Otimizada
+
+O projeto foi reorganizado para:
+- Manter apenas arquivos essenciais
+- Facilitar a manutenção
+- Melhorar a legibilidade do código
+- Otimizar a compilação
 
 ## Contribuição
 
@@ -121,6 +165,13 @@ Para contribuir com o projeto:
 2. Crie uma branch para sua feature
 3. Faça commit das suas mudanças
 4. Abra um Pull Request
+
+### Padrões de Contribuição
+
+- Use XeLaTeX para compilação
+- Mantenha o encoding UTF-8
+- Teste a compilação antes de fazer commit
+- Atualize a documentação quando necessário
 
 ## Licença
 
@@ -132,4 +183,6 @@ Para dúvidas ou sugestões, entre em contato com o grupo ASI do IFG Câmpus For
 
 ---
 
-**Nota**: Este documento é parte do handbook "Administração de Serviços para Internet com GNU Linux/Debian" e serve como referência para estudantes do IFG Câmpus Formosa. 
+**Nota**: Este documento é parte do handbook "Administração de Serviços para Internet com GNU Linux/Debian" e serve como referência para estudantes do IFG Câmpus Formosa.
+
+**Última atualização**: Julho 2025 
