@@ -1,0 +1,73 @@
+# LaTeX auxiliary files
+*.aux
+*.log
+*.out
+*.toc
+*.lof
+*.lot
+*.fls
+*.fdb_latexmk
+*.synctex.gz
+*.bbl
+*.blg
+*.bcf
+*.run.xml
+*.nav
+*.snm
+*.vrb
+
+# PDF files (uncomment if you don't want to version PDFs)
+# *.pdf
+
+# Backup files
+*.bak
+*.backup
+*~
+
+# Temporary files
+*.tmp
+*.temp
+
+# OS generated files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Editor files
+*.swp
+*.swo
+*~
+
+# IDE files
+.vscode/
+.idea/
+*.sublime-project
+*.sublime-workspace
+
+# Build directories
+build/
+output/
+
+# Log files
+*.log
+
+# Scripts executáveis (opcional - descomente se não quiser versionar)
+# *.sh
+# *.py
+
+# Configurações locais
+.env
+config.local.*
+
+# Arquivos de teste
+test.*
+*_test.*
+*_simple.*
+
+# Arquivos de backup de scripts
+*.sh.bak
+*.conf.bak 
