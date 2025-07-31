@@ -1,188 +1,165 @@
-# Handbook - Administração de Serviços para Internet com GNU Linux/Debian
+# Handbook iptables - ASI
 
-## Sobre o Projeto
+Este repositório contém o handbook sobre iptables desenvolvido pelo Grupo ASI do IFG Câmpus Formosa, incluindo documentação técnica, scripts de configuração e ferramentas de debugging.
 
-Este projeto contém o template LaTeX para criação de um handbook sobre "Administração de Serviços para Internet com GNU Linux/Debian" para o IFG Câmpus Formosa.
+## 📋 Sobre o Projeto
 
-### Capítulo Atual: Servidor Firewall (iptables) e Aplicações
+O handbook aborda a configuração e administração de firewalls usando iptables no Linux, com foco especial no Debian 12 e suas particularidades relacionadas à transição para nftables.
 
-O capítulo 7 foi desenvolvido com foco em:
-- Configuração e administração do iptables
-- Implementação de políticas de segurança
-- Configuração de NAT e roteamento
-- Boas práticas de segurança
-- Monitoramento e manutenção
+## 🔧 Correções e Melhorias Implementadas
 
-## Estrutura do Projeto
+### 1. Pontos Críticos Corrigidos
+
+#### A) Inconsistência Fundamental: iptables-legacy vs. nftables
+- **Problema**: O manual não abordava a transição do iptables-legacy para nftables no Debian 12
+- **Solução**: Adicionada seção completa explicando:
+  - Contexto histórico da transição
+  - Como verificar qual versão está em uso
+  - Implicações práticas da mudança
+  - Como configurar iptables-legacy se necessário
+
+#### B) Erros de Sintaxe e Formatação
+- **Problema**: Comandos com opções agrupadas incorretamente
+- **Soluções**:
+  - `sudo iptables -L-v-n` → `sudo iptables -L -v -n`
+  - `sudo iptables -L-v-n-line-numbers` → `sudo iptables -L -v -n --line-numbers`
+  - `lsmod grep iptable` → `lsmod | grep iptable`
+
+#### C) Proteção Contra Força Bruta SSH
+- **Problema**: Sintaxe incorreta nas regras de proteção
+- **Solução**: Implementada versão corrigida usando `conntrack`:
+  ```bash
+  # Versão corrigida
+  iptables -A INPUT -p tcp --dport 22 -m conntrack --ctstate NEW -m recent --set --name SSH --rsource
+  iptables -A INPUT -p tcp --dport 22 -m conntrack --ctstate NEW -m recent --update --seconds 60 --hitcount 4 --name SSH --rsource -j DROP
+  ```
+
+### 2. Pontos de Melhoria Implementados
+
+#### A) Modernização e Boas Práticas
+- **Nomes de Interfaces**: Adicionadas notas sobre nomes modernos de interfaces (`enp3s0`, `ens18`)
+- **netstat vs. ss**: Recomendação explícita para usar `ss` em vez de `netstat` (obsoleto)
+- **Documentação Interna**: Melhorada a documentação dos scripts com comentários explicativos
+
+#### B) Clareza e Didática
+- **Documentação de Estados**: Explicação detalhada dos estados ESTABLISHED e RELATED
+- **Seção de Debugging**: Nova seção com técnicas para diagnosticar problemas
+- **Comandos Essenciais**: Tabela de referência rápida com os comandos mais importantes
+
+#### C) Estrutura do Documento
+- **Resumo Final**: Adicionada tabela de "Comandos Essenciais" como referência rápida
+- **Seções Organizadas**: Melhor organização do conteúdo com seções lógicas
+
+## 📁 Estrutura do Repositório
 
 ```
 handbook-iptables-asi/
-├── modelo-handbook.tex          # Arquivo principal do documento LaTeX
-├── bibliografia.bib             # Referências bibliográficas
-├── .gitignore                   # Configuração para ignorar arquivos auxiliares
-├── fig/                         # Pasta com figuras e imagens
-├── docs/                        # Pasta para documentação adicional
-├── scripts/                     # Scripts de exemplo e configuração
-│   ├── firewall-basic.sh        # Configuração básica de firewall
-│   ├── firewall-advanced.sh     # Configuração avançada
-│   ├── backup-rules.sh          # Script de backup e restauração
+├── modelo-handbook.tex          # Documento principal atualizado
+├── scripts/
+│   ├── firewall-basic.sh        # Script básico atualizado (v2.0)
+│   ├── firewall-advanced.sh     # Script avançado
+│   ├── firewall-debug.sh        # NOVO: Script de debugging
+│   ├── backup-rules.sh          # Script de backup
 │   └── firewall-config.conf     # Arquivo de configuração
-├── README.md                    # Este arquivo
-└── INSTRUCOES_GRUPO.md          # Instruções específicas do grupo
+├── fig/                         # Figuras e imagens
+├── docs/                        # Documentação adicional
+└── bibliografia.bib             # Referências bibliográficas
 ```
 
-## Como Compilar o Documento
+## 🚀 Scripts Disponíveis
 
-### Pré-requisitos
+### 1. firewall-basic.sh (v2.0)
+Script de configuração básica atualizado com:
+- Verificação de versão do iptables
+- Proteção contra força bruta SSH corrigida
+- Logging para debugging
+- Verificações de segurança adicionais
+- Documentação interna melhorada
 
-Para compilar o documento LaTeX, você precisa ter instalado:
+### 2. firewall-debug.sh (NOVO)
+Script interativo para debugging com:
+- Menu de opções para diagnóstico
+- Verificação de status e regras
+- Teste de conectividade
+- Monitoramento de logs em tempo real
+- Análise de regras por cadeia
+- Backup automático
 
-1. **LaTeX Distribution** (escolha uma das opções):
-   - **TeX Live** (recomendado para Linux)
-   - **MiKTeX** (recomendado para Windows)
-   - **MacTeX** (para macOS)
+### 3. firewall-advanced.sh
+Script para configurações avançadas
 
-2. **Editor LaTeX** (opcional):
-   - TeXstudio
-   - TeXmaker
-   - Overleaf (online)
-   - VS Code com extensão LaTeX Workshop
+### 4. backup-rules.sh
+Script para backup e restauração de regras
 
-### Compilação Recomendada
+## 📖 Principais Seções do Handbook
 
-**⚠️ IMPORTANTE**: Este projeto foi configurado para usar **XeLaTeX** devido ao suporte nativo para UTF-8 e caracteres especiais.
+1. **Ficha Técnica** - Informações básicas do serviço
+2. **Descrição do Servidor** - Conceitos fundamentais
+3. **iptables-legacy vs. nftables** - NOVA: Transição no Debian
+4. **Instalação** - Configuração inicial
+5. **Arquivos de Configuração** - Estrutura e comandos
+6. **Configurações Avançadas** - NAT, logging, proteções
+7. **Debugging de Regras** - NOVA: Técnicas de diagnóstico
+8. **Comandos Essenciais** - NOVA: Referência rápida
+9. **Considerações Finais** - Boas práticas e recomendações
 
-#### Comando de Compilação:
+## 🔍 Comandos Essenciais (Referência Rápida)
+
+| Comando | Descrição |
+|---------|-----------|
+| `iptables -L -v -n` | Listar todas as regras com estatísticas |
+| `iptables -A INPUT -p tcp --dport 80 -j ACCEPT` | Adicionar regra para permitir HTTP |
+| `iptables -D INPUT 1` | Deletar regra número 1 da cadeia INPUT |
+| `iptables -F` | Limpar todas as regras |
+| `iptables -P INPUT DROP` | Definir política padrão da cadeia INPUT |
+| `iptables-save` | Salvar regras em arquivo |
+| `iptables-restore < arquivo` | Restaurar regras de arquivo |
+| `iptables -L --line-numbers` | Listar regras com números de linha |
+| `iptables -C INPUT -p tcp --dport 22 -j ACCEPT` | Verificar se regra existe |
+
+## 🛠️ Como Usar
+
+### Compilar o Documento
 ```bash
-xelatex modelo-handbook.tex
-```
-
-#### Alternativa (se necessário):
-```bash
+# Compilar o handbook LaTeX
 pdflatex modelo-handbook.tex
 ```
 
-### Compilação Múltipla
-
-Para referências e índice, pode ser necessário compilar múltiplas vezes:
-
+### Executar Scripts
 ```bash
-xelatex modelo-handbook.tex
-xelatex modelo-handbook.tex
-```
-
-### Arquivos Gerados
-
-Após a compilação, serão gerados:
-- `modelo-handbook.pdf` - Documento final (7 páginas)
-- `modelo-handbook.aux` - Arquivo auxiliar (ignorado pelo .gitignore)
-- `modelo-handbook.log` - Log da compilação (ignorado pelo .gitignore)
-
-## Configuração do Projeto
-
-### .gitignore
-
-O projeto inclui um `.gitignore` configurado para:
-- Arquivos auxiliares do LaTeX (`.aux`, `.log`, `.out`, etc.)
-- Arquivos temporários e de backup
-- Arquivos do sistema operacional
-- Arquivos de editores/IDEs
-- Arquivos de teste
-
-### Encoding e Caracteres Especiais
-
-- **Encoding**: UTF-8 nativo (XeLaTeX)
-- **Caracteres especiais**: Suporte completo para acentos e caracteres portugueses
-- **Fontes**: Configuradas automaticamente pelo XeLaTeX
-
-## Scripts de Exemplo
-
-### Configuração Básica de Firewall
-
-O arquivo `scripts/firewall-basic.sh` contém uma configuração básica de firewall que pode ser usada como ponto de partida.
-
-### Como usar os scripts:
-
-```bash
-# Dar permissão de execução
-chmod +x scripts/firewall-basic.sh
-
-# Executar (como root)
+# Configuração básica
 sudo ./scripts/firewall-basic.sh
+
+# Debugging e verificação
+sudo ./scripts/firewall-debug.sh
+
+# Backup das regras
+sudo ./scripts/backup-rules.sh
 ```
 
-### Scripts Disponíveis:
+## ⚠️ Importante
 
-- `firewall-basic.sh` - Configuração básica de firewall
-- `firewall-advanced.sh` - Configuração avançada com proteções
-- `backup-rules.sh` - Backup e restauração de regras
-- `firewall-config.conf` - Arquivo de configuração
+- **Ambiente de Teste**: Sempre teste as configurações em ambiente controlado antes da produção
+- **Backup**: Faça backup das regras atuais antes de aplicar mudanças
+- **Compatibilidade**: Esteja ciente da transição para nftables no Debian 12
+- **Documentação**: Mantenha documentação atualizada das configurações
 
-## Conteúdo do Capítulo
+## 📚 Referências
 
-### Seções Principais:
+- [Debian iptables Documentation](https://wiki.debian.org/iptables)
+- [nftables vs iptables](https://wiki.nftables.org/wiki-nftables/index.php/Moving_from_iptables_to_nftables)
+- [Netfilter Project](https://netfilter.org/)
 
-1. **Ficha Técnica**: Informações básicas sobre o serviço
-2. **Descrição do Servidor**: Conceitos fundamentais do iptables
-3. **Instalação**: Como instalar e configurar o iptables
-4. **Arquivos de Configuração**: Localização e uso dos arquivos de configuração
-5. **Exemplos e Boas Práticas**: Configurações práticas e recomendações
-6. **Considerações Finais**: Pontos importantes para produção
+## 👥 Autores
 
-### Tópicos Abordados:
+**Grupo ASI - IFG Câmpus Formosa**
 
-- Conceitos de firewall e filtragem de pacotes
-- Tabelas e cadeias do iptables (filter, nat, mangle)
-- Configuração de NAT e roteamento
-- Proteção contra ataques comuns (SYN flood, port scanning)
-- Logging e monitoramento
-- Scripts de backup e restauração
-- Boas práticas de segurança
-- Configurações para ambientes de produção
+## 📄 Licença
 
-## Limpeza e Manutenção
-
-### Arquivos Removidos
-
-Durante a limpeza do projeto, foram removidos:
-- Arquivos de teste temporários
-- Arquivos auxiliares do LaTeX
-- Arquivos duplicados ou desnecessários
-
-### Estrutura Otimizada
-
-O projeto foi reorganizado para:
-- Manter apenas arquivos essenciais
-- Facilitar a manutenção
-- Melhorar a legibilidade do código
-- Otimizar a compilação
-
-## Contribuição
-
-Para contribuir com o projeto:
-
-1. Faça um fork do repositório
-2. Crie uma branch para sua feature
-3. Faça commit das suas mudanças
-4. Abra um Pull Request
-
-### Padrões de Contribuição
-
-- Use XeLaTeX para compilação
-- Mantenha o encoding UTF-8
-- Teste a compilação antes de fazer commit
-- Atualize a documentação quando necessário
-
-## Licença
-
-Este projeto está sob a licença [especificar licença].
-
-## Contato
-
-Para dúvidas ou sugestões, entre em contato com o grupo ASI do IFG Câmpus Formosa.
+Este projeto está sob licença educacional para uso acadêmico.
 
 ---
 
-**Nota**: Este documento é parte do handbook "Administração de Serviços para Internet com GNU Linux/Debian" e serve como referência para estudantes do IFG Câmpus Formosa.
-
-**Última atualização**: Julho 2025 
+**Versão**: 2.0  
+**Data**: 2024  
+**Status**: Atualizado com correções e melhorias 

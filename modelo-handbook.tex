@@ -1,15 +1,19 @@
-\documentclass[12pt,fleqn]{article}
+﻿\documentclass[12pt,fleqn]{article}
 %\usepackage {psfig,epsfig} % para incluir figuras em PostScript
-\usepackage{amsfonts,amsthm,amsopn,amssymb,latexsym}
+\usepackage{amsfonts,amsthm,amsopn}
 \usepackage{graphicx}
-% XeLaTeX já suporta UTF-8 nativamente
+% XeLatéX já suporta UTF-8 nativamente
+\usepackage[utf8]{inputenc}
 \usepackage[T1]{fontenc}
 \usepackage[brazil]{babel}
 \usepackage{geometry}
 \usepackage[intlimits]{amsmath}
 \usepackage{listings}
 \usepackage{xcolor}
-%\usepackage{hyperref}
+\usepackage{booktabs}
+\usepackage{url}
+\usepackage{float}
+\usepackage{hyperref}
 
 % Configuração para código
 \lstset{
@@ -32,7 +36,7 @@
 \newcommand{\Rmn}{{\ensuremath{\mathbb{R}}}^{{m}\times{n}}}
 \newcommand{\contcaption}[1]{\vspace*{-0.6\baselineskip}\begin{center}#1\end{center}\vspace*{-0.6\baselineskip}}
 %=======================================================================
-% Dimensões da página
+% Dimensoes da pagina
 \geometry{
     a4paper,
     margin=2.5cm,
@@ -43,7 +47,7 @@
 }
 \renewcommand{\baselinestretch}{1.15} % espaçamento entre linhas
        
-% Ser indulgente no preenchimento das linhas
+% ser indulgente no preenchimento das linhas
 \sloppy
  
 \begin{document}
@@ -56,10 +60,10 @@
 {\Large \textbf{Capítulo 7 - Servidor Firewall e Aplicações}}
 \end{center}
 \begin{center}
-{\textit{Grupo ASI - IFG Câmpus Formosa}}
+{\textit{Wesley Ferreira, Henrique Moura, Gabriel Ornelas, Mateus Silva - IFG Campus Formosa}}
 \end{center}
 
-\section {Ficha Técnica}  
+\section{Ficha Técnica}  
 
 \begin{table}[h]
 \centering
@@ -68,101 +72,223 @@
 	\textbf{Serviço} & \textbf{Descrição}\\\hline 
 	Método de Comunicação & Protocolo TCP/UDP, portas configuráveis (22, 80, 443, etc.) \\\hline
 	Funções & Controle de tráfego de rede, filtragem de pacotes, NAT, balanceamento de carga\\\hline
-	Pacote para instalação & iptables (já incluído no kernel Linux), iptables-persistent\\\hline
-	Script de controle & /etc/init.d/netfilter-persistent, systemctl status iptables\\\hline
+	Pacote para Instalação & iptables (já incluído no kernel Linux), iptables-persistent\\\hline
+	Script de controle & \texttt{systemctl status netfilter-persistent}, \texttt{netfilter-persistent save} \\\hline
 \end{tabular}
-\caption{Ficha Técnica do Servidor iptables}
+\caption{Ficha Técnica do servidor netfilter/iptables}
 \end{table}
 
 \section{Descrição do Servidor}
 
-O iptables é um firewall baseado em kernel do Linux que permite controlar o tráfego de rede através de regras de filtragem de pacotes. É uma ferramenta fundamental para segurança de rede, permitindo:
+\subsection{Netfilter: O framework de firewall}
+
+O \textbf{netfilter} é o framework de firewall do kernel Linux que permite controlar o tráfego de rede através de regras de filtragem de pacotes. É o sistema fundamental que implementa as funcionalidades de firewall no Linux, permitindo:
 
 \begin{itemize}
-    \item \textbf{Filtragem de Pacotes}: Controlar quais pacotes podem entrar ou sair do sistema
-    \item \textbf{NAT (Network Address Translation)}: Tradução de endereços de rede
-    \item \textbf{Mangle}: Modificação de cabeçalhos de pacotes
-    \item \textbf{Logging}: Registro de atividades de rede para auditoria
+    \item \textbf{Filtragem de pacotes}: controlar quais pacotes podem entrar ou sair do sistema
+    \item \textbf{NAT (Network Address Translation)}: tradução de endereços de rede
+    \item \textbf{Mangle}: modificação de cabeçalhos de pacotes
+    \item \textbf{Logging}: registro de atividades de rede para auditoria
+\end{itemize}
+
+\subsection{iptables: A ferramenta de Gerenciamento}
+
+O \textbf{iptables} é uma ferramenta de linha de comando utilizada para gerenciar o netfilter. É a interface mais comum para configurar as regras do firewall, permitindo:
+
+\begin{itemize}
+    \item criar, modificar e deletar regras de firewall
+    \item definir políticas padrão para as cadeias
+    \item configurar NAT e port forwarding
+    \item implementar proteções contra ataques
 \end{itemize}
 
 O iptables trabalha com três tabelas principais:
 \begin{itemize}
-    \item \textbf{filter}: Tabela padrão para filtragem de pacotes
-    \item \textbf{nat}: Para tradução de endereços de rede
-    \item \textbf{mangle}: Para modificação de pacotes
+    \item \textbf{filter}: tabela padrão para filtragem de pacotes
+    \item \textbf{nat}: para tradução de endereços de rede
+    \item \textbf{mangle}: para modificação de pacotes
 \end{itemize}
 
 E cinco cadeias (chains) principais:
 \begin{itemize}
-    \item \textbf{INPUT}: Pacotes destinados ao sistema local
-    \item \textbf{OUTPUT}: Pacotes originados do sistema local
-    \item \textbf{FORWARD}: Pacotes que passam pelo sistema (roteamento)
-    \item \textbf{PREROUTING}: Pacotes que chegam (NAT)
-    \item \textbf{POSTROUTING}: Pacotes que saem (NAT)
+    \item \textbf{INPUT}: pacotes destinados ao sistema local
+    \item \textbf{OUTPUT}: pacotes originados do sistema local
+    \item \textbf{FORWARD}: pacotes que passam pelo sistema (roteamento)
+    \item \textbf{PREROUTING}: pacotes que chegam (NAT)
+    \item \textbf{POSTROUTING}: pacotes que saem (NAT)
 \end{itemize}
+
+\section{iptables-legacy vs. nftables: A transição no Debian}
+
+\subsection{Contexto Histórico}
+
+Desde o Debian 10 ("Buster"), o framework padrão para firewall no Linux é o \textbf{nftables}, que substitui o iptables como ferramenta nativa. No Debian 12, quando você executa comandos \texttt{iptables}, está na verdade usando uma camada de compatibilidade (\texttt{iptables-nft}) que traduz a sintaxe do iptables para regras de nftables.
+
+\subsection{Verificando qual versão está em uso}
+
+\begin{lstlisting}[language=bash, caption=Verificação da versão do iptables]
+# verificar qual versão do iptables está ativa
+sudo update-alternatives --config iptables
+
+# verificar se está usando nftables ou legacy
+sudo iptables --version
+
+# verificar as regras nativas do nftables
+sudo nft list ruleset
+\end{lstlisting}
+
+\subsection{Implicações práticas}
+
+\begin{itemize}
+    \item \textbf{Compatibilidade}: os comandos iptables continuam funcionando normalmente
+    \item \textbf{Performance}: nftables oferece melhor performance e flexibilidade
+    \item \textbf{Debugging}: as regras podem aparecer diferentes quando visualizadas com \texttt{nft list ruleset}
+    \item \textbf{Futuro}: recomenda-se aprender nftables para novos projetos
+\end{itemize}
+
+\subsection{Usando iptables-legacy (Opcional)}
+
+Se você precisar usar o iptables "clássico" para compatibilidade com scripts antigos:
+
+\begin{lstlisting}[language=bash, caption=Configuração do iptables-legacy]
+# instalar iptables-legacy
+sudo apt install iptables-legacy
+
+# configurar para usar legacy
+sudo update-alternatives --set iptables /usr/sbin/iptables-legacy
+sudo update-alternatives --set ip6tables /usr/sbin/ip6tables-legacy
+\end{lstlisting}
 
 \section{Instalação}
 
 O iptables já vem incluído no kernel Linux, mas para uma configuração completa, é necessário instalar alguns pacotes adicionais:
 
 \begin{lstlisting}[language=bash, caption=Instalação do iptables]
-# Atualizar repositórios
+# atualizar repositórios
 sudo apt update
 
-# Instalar iptables e ferramentas relacionadas
+# instalar iptables e ferramentas relacionadas
 sudo apt install iptables iptables-persistent netfilter-persistent
 
-# Verificar se o iptables está funcionando
+# verificar se o iptables está funcionando
 sudo iptables -L -v
 \end{lstlisting}
 
 Para verificar se o módulo do kernel está carregado:
 
 \begin{lstlisting}[language=bash, caption=Verificação de módulos]
-# Verificar módulos carregados
+# verificar módulos carregados
 lsmod | grep iptable
 
-# Carregar módulos se necessário
+# carregar módulos se necessário
 sudo modprobe iptable_filter
 sudo modprobe iptable_nat
 sudo modprobe iptable_mangle
 \end{lstlisting}
 
-\section {Arquivos de Configuração e Principais Características}
+\section{Arquivos de Configuração e Principais Características}
 
 \subsection{Arquivos de Configuração}
 
 \begin{itemize}
-    \item \textbf{/etc/iptables/rules.v4}: Arquivo principal de regras IPv4
-    \item \textbf{/etc/iptables/rules.v6}: Arquivo principal de regras IPv6
-    \item \textbf{/etc/default/iptables}: Configurações padrão
-    \item \textbf{/proc/net/ip\_tables\_names}: Tabelas ativas
+    \item \textbf{/etc/iptables/rules.v4}: arquivo principal de regras IPv4
+    \item \textbf{/etc/iptables/rules.v6}: arquivo principal de regras IPv6
+    \item \textbf{/etc/default/iptables}: configurações padrão
+    \item \textbf{/proc/net/ip\_tables\_names}: tabelas ativas
 \end{itemize}
 
 \subsection{Comandos Principais}
 
 \begin{lstlisting}[language=bash, caption=Comandos básicos do iptables]
-# Listar todas as regras
+# listar todas as regras
 sudo iptables -L -v -n
 
-# Listar regras com números de linha
+# listar regras com números de linha
 sudo iptables -L -v -n --line-numbers
 
-# Limpar todas as regras
+# limpar todas as regras
 sudo iptables -F
 
-# Definir políticas padrão
+# definir políticas padrão
 sudo iptables -P INPUT DROP
 sudo iptables -P OUTPUT ACCEPT
 sudo iptables -P FORWARD DROP
 \end{lstlisting}
 
+\section{Glossário de Comandos e Opções Comuns}
+
+Para construir e entender as regras do iptables, é fundamental conhecer o significado de suas principais opções (flags) e alvos (targets). Abaixo estão os mais utilizados neste guia.
+
+\subsubsection{Opções de Gerenciamento de Regras}
+
+\begin{itemize}
+    \item \textbf{-A, --append}: Adiciona uma nova regra ao final de uma cadeia (chain).
+    
+    \textit{Exemplo}: \texttt{iptables -A INPUT ...}
+    
+    \item \textbf{-D, --delete}: Deleta uma regra de uma cadeia, seja pelo seu número ou pela sua especificação exata.
+    
+    \textit{Exemplo}: \texttt{iptables -D INPUT 1}
+    
+    \item \textbf{-P, --policy}: Define a política padrão para uma cadeia. Esta é a ação a ser tomada caso nenhum pacote corresponda a uma regra específica.
+    
+    \textit{Exemplo}: \texttt{iptables -P INPUT DROP}
+    
+    \item \textbf{-L, --list}: Lista todas as regras de uma cadeia.
+    
+    \item \textbf{-F, --flush}: Limpa (deleta) todas as regras de uma cadeia.
+    
+    \item \textbf{-X, --delete-chain}: Deleta uma cadeia personalizada que esteja vazia.
+    
+    \item \textbf{-C, --check}: Verifica se uma regra existe, sem aplicá-la.
+\end{itemize}
+
+\subsubsection{Parâmetros de Correspondência (Matching)}
+
+\begin{itemize}
+    \item \textbf{-p, --protocol}: Especifica o protocolo do pacote (ex: tcp, udp, icmp).
+    
+    \item \textbf{--dport, --destination-port}: Especifica a porta de destino para protocolos como TCP e UDP.
+    
+    \item \textbf{-i, --in-interface}: Especifica a interface de entrada pela qual um pacote foi recebido (ex: eth0, lo).
+    
+    \item \textbf{-o, --out-interface}: Especifica a interface de saída pela qual um pacote será enviado.
+    
+    \item \textbf{-m, --match}: Carrega um módulo de correspondência estendido. Essencial para regras mais complexas.
+    
+    \textit{Exemplo}: \texttt{-m state} para usar o módulo de estado da conexão.
+    
+    \item \textbf{--state}: Usado com o módulo \texttt{-m state}, verifica o estado de uma conexão (NEW, ESTABLISHED, RELATED).
+    
+    \item \textbf{--ctstate}: Usado com o módulo \texttt{-m conntrack}, é a forma moderna de verificar o estado da conexão.
+\end{itemize}
+
+\subsubsection{Alvos (Targets)}
+
+O alvo é especificado pela opção \textbf{-j, --jump} e define o que fazer com um pacote que corresponde a uma regra.
+
+\begin{itemize}
+    \item \textbf{ACCEPT}: Aceita o pacote, permitindo que ele continue seu fluxo normal.
+    
+    \item \textbf{DROP}: Descarta o pacote silenciosamente. Nenhuma resposta é enviada à origem, o que é ideal para segurança, pois não revela a presença do firewall.
+    
+    \item \textbf{REJECT}: Rejeita o pacote, bloqueando-o, mas enviando uma mensagem de erro à origem (ex: "port unreachable").
+    
+    \item \textbf{LOG}: Registra o pacote nos logs do sistema (geralmente em \texttt{/var/log/syslog}). É um alvo que não interrompe o fluxo; após o log, o pacote continua para a próxima regra na cadeia.
+    
+    \item \textbf{MASQUERADE}: Usado na tabela nat, "camufla" os endereços de IP de uma rede interna, fazendo com que todos pareçam vir do endereço IP do firewall. Essencial para compartilhar uma conexão com a internet.
+    
+    \item \textbf{DNAT}: (Destination NAT) Altera o endereço de IP de destino do pacote. Usado para redirecionar portas (port forwarding).
+\end{itemize}
+
 \subsection{Exemplo de Configuração Básica}
 
-\begin{lstlisting}[language=bash, caption=Configuração básica de firewall]
+\textbf{NOTA:} Para executar este script, primeiro salve-o em um arquivo (por exemplo, \texttt{firewall-rules.sh}) e depois conceda permissão de execução com o comando: \texttt{chmod +x firewall-rules.sh}. Em seguida, execute-o com \texttt{sudo ./firewall-rules.sh}.
+
+\begin{lstlisting}[language=bash, caption=Configuração Básica de firewall]
 #!/bin/bash
 
-# Limpar todas as regras
+# limpar todas as regras
 iptables -F
 iptables -X
 iptables -t nat -F
@@ -170,42 +296,67 @@ iptables -t nat -X
 iptables -t mangle -F
 iptables -t mangle -X
 
-# Definir políticas padrão
+# definir políticas padrão
 iptables -P INPUT DROP
 iptables -P FORWARD DROP
 iptables -P OUTPUT ACCEPT
 
-# Permitir tráfego local
+# permitir tráfego local
 iptables -A INPUT -i lo -j ACCEPT
 iptables -A OUTPUT -o lo -j ACCEPT
 
-# Permitir conexões estabelecidas
+# permitir conexões estabelecidas e relacionadas (essencial para o retorno de pacotes)
+# ESTABLISHED: pacotes que fazem parte de uma conexão existente
+# RELATED: pacotes de novas conexões que estão relacionadas a uma existente (ex: FTP)
 iptables -A INPUT -m state --state ESTABLISHED,RELATED -j ACCEPT
 
-# Permitir SSH (porta 22)
+# permitir SSH (porta 22)
 iptables -A INPUT -p tcp --dport 22 -j ACCEPT
 
-# Permitir HTTP (porta 80)
+# permitir HTTP (porta 80)
 iptables -A INPUT -p tcp --dport 80 -j ACCEPT
 
-# Permitir HTTPS (porta 443)
+# permitir HTTPS (porta 443)
 iptables -A INPUT -p tcp --dport 443 -j ACCEPT
 
-# Permitir ping (ICMP)
+# permitir ping (ICMP)
 iptables -A INPUT -p icmp -j ACCEPT
 \end{lstlisting}
 
-\section {Outras opções/Descritivas de segurança/Boas práticas/Exemplos}
+\subsection{Tornando as Regras Persistentes}
+
+Após executar o script \texttt{firewall-rules.sh}, as regras são aplicadas imediatamente, mas apenas na memória do kernel. Isso significa que, se o servidor for reiniciado, \textbf{essas regras serão perdidas}.
+
+Para garantir que o seu firewall seja reativado com o mesmo conjunto de regras a cada inicialização, você deve salvá-las de forma permanente. O pacote \texttt{iptables-persistent}, que foi instalado anteriormente, é a ferramenta correta para esta tarefa.
+
+O processo é feito em duas etapas:
+\begin{enumerate}
+    \item \textbf{Aplicar as regras} com o script, como já foi feito: \texttt{sudo ./firewall-rules.sh}.
+    \item \textbf{Salvar as regras ativas} no disco com o seguinte comando:
+\end{enumerate}
+
+\begin{lstlisting}[language=bash, caption=Salvando as regras para persistência]
+# Este comando salva as regras atuais do IPv4 e IPv6
+sudo netfilter-persistent save
+\end{lstlisting}
+
+Ao executar este comando, o serviço \texttt{netfilter-persistent} irá ler as regras que estão ativas na memória e escrevê-las no arquivo \texttt{/etc/iptables/rules.v4}. A partir de agora, a cada boot do sistema, este serviço irá carregar automaticamente as regras salvas neste arquivo, garantindo que seu servidor esteja sempre protegido.
+
+\section{Outras Opções, Descritivas de Segurança, Boas Práticas e Exemplos}
 
 \subsection{Configuração de NAT}
 
 \begin{lstlisting}[language=bash, caption=Configuração de NAT]
-# Habilitar NAT para rede interna
+# habilitar NAT para rede interna
+# nota: substitua 'eth0' pelo nome correto da sua interface de rede
+# Use 'ip a' ou 'ifconfig' para identificar o nome da interface
 iptables -t nat -A POSTROUTING -o eth0 -j MASQUERADE
 
-# Redirecionar porta externa para interna
+# redirecionar porta externa para interna
 iptables -t nat -A PREROUTING -p tcp --dport 8080 -j DNAT --to-dest 192.168.1.100:80
 \end{lstlisting}
+
+\textbf{NOTA sobre nomes de interfaces}: Em sistemas modernos, as interfaces de rede raramente usam nomes como \texttt{eth0}. Use comandos como \texttt{ip a} ou \texttt{ifconfig} para identificar o nome correto da interface em seu sistema (ex: \texttt{enp3s0}, \texttt{ens18}).
 
 \subsection{Configuração de Logging}
 
@@ -213,11 +364,11 @@ iptables -t nat -A PREROUTING -p tcp --dport 8080 -j DNAT --to-dest 192.168.1.10
 # Log de tentativas de conexão SSH
 iptables -A INPUT -p tcp --dport 22 -j LOG --log-prefix "SSH_ATTEMPT: "
 
-# Log de pacotes rejeitados
+# Log de pacotes rejeitados (útil para debugging)
 iptables -A INPUT -j LOG --log-prefix "DROP: "
 \end{lstlisting}
 
-\subsection{Proteção contra Ataques}
+\subsection{Proteção Contra Ataques}
 
 \begin{lstlisting}[language=bash, caption=Proteções de segurança]
 # Proteção contra SYN flood
@@ -226,9 +377,34 @@ iptables -A INPUT -p tcp --syn -m limit --limit 1/s --limit-burst 3 -j ACCEPT
 # Proteção contra port scanning
 iptables -A INPUT -p tcp --tcp-flags ALL NONE -j DROP
 
-# Proteção contra ataques de força bruta SSH
-iptables -A INPUT -p tcp --dport 22 -m recent --name SSH --set
-iptables -A INPUT -p tcp --dport 22 -m recent --name SSH --update --seconds 60 --hitcount 4 -j DROP
+# Proteção contra ataques de força bruta SSH (Versão corrigida)
+# adicionar IPs que tentam novas conexões SSH a uma lista "recent"
+iptables -A INPUT -p tcp --dport 22 -m conntrack --ctstate NEW -m recent --set --name SSH --rsource
+
+# bloquear IPs na lista que fizerem mais de 4 tentativas em 60 segundos
+iptables -A INPUT -p tcp --dport 22 -m conntrack --ctstate NEW -m recent --update --seconds 60 --hitcount 4 --name SSH --rsource -j DROP
+\end{lstlisting}
+
+\subsection{Debugging de Regras}
+
+Uma das maiores dificuldades ao aprender iptables é descobrir por que um pacote está sendo bloqueado. Aqui estão técnicas úteis:
+
+\begin{lstlisting}[language=bash, caption=Técnicas de debugging]
+# adicionar logging antes da política DROP para diagnosticar regras
+iptables -A INPUT -j LOG --log-prefix "PACOTE DESCARTADO: "
+
+# verificar logs em tempo real
+sudo tail -f /var/log/syslog | grep iptables
+
+# Alternativa para sistemas com systemd-journald
+# sudo journalctl -fu kernel | grep iptables
+
+# testar regras específicas com contadores
+iptables -A INPUT -p tcp --dport 80 -j ACCEPT
+iptables -L INPUT -v -n  # ver contadores de pacotes (pkts) para confirmar que a regra foi atingida
+
+# Usar iptables-save para ver todas as regras em formato legível
+sudo iptables-save
 \end{lstlisting}
 
 \subsection{Boas Práticas}
@@ -241,6 +417,7 @@ iptables -A INPUT -p tcp --dport 22 -m recent --name SSH --update --seconds 60 -
     \item \textbf{Usar políticas restritivas por padrão}
     \item \textbf{Implementar rate limiting para serviços críticos}
     \item \textbf{Manter o sistema atualizado}
+    \item \textbf{Usar \texttt{ss} em vez de \texttt{netstat} (obsoleto)}
 \end{enumerate}
 
 \subsection{Script de Backup e Restauração}
@@ -248,56 +425,108 @@ iptables -A INPUT -p tcp --dport 22 -m recent --name SSH --update --seconds 60 -
 \begin{lstlisting}[language=bash, caption=Script de backup]
 #!/bin/bash
 
-# Backup das regras atuais
-iptables-save > /backup/iptables_rules_$(date +%Y%m%d_%H%M%S).bak
+# Certifique-se de que o diretório de backup existe
+# mkdir -p /root/Backups_Firewall
 
-# Restaurar regras
-# iptables-restore < /backup/iptables_rules_20231201_143022.bak
+# backup das regras atuais em um diretório seguro (/root/backups_firewall)
+iptables-save > /root/backups_firewall/iptables_rules_$(date +%Y%m%d_%H%M%S).bak
+
+# restaurar regras
+# iptables-restore < /root/backups_firewall/iptables_rules_recentes.bak
 \end{lstlisting}
 
 \subsection{Monitoramento e Manutenção}
 
 \begin{lstlisting}[language=bash, caption=Comandos de monitoramento]
-# Verificar estatísticas
+# verificar estatísticas
 sudo iptables -L -v -n
 
-# Monitorar logs em tempo real
+# monitorar logs em tempo real
 sudo tail -f /var/log/syslog | grep iptables
 
-# Verificar conexões ativas
-sudo netstat -tuln
+# Alternativa para sistemas com systemd-journald
+# sudo journalctl -fu kernel | grep iptables
 
-# Verificar processos de rede
+# verificar conexões ativas (recomendado: usar ss em vez de netstat)
 sudo ss -tuln
+
+# verificar interfaces de rede
+sudo ip a
 \end{lstlisting}
 
-\section{Considerações finais}
+\textbf{NOTA}: O comando \texttt{netstat} é considerado obsoleto. Use \texttt{ss} (socket statistics) que é mais eficiente é moderno. Em sistemas que usam systemd-journald, uma alternativa moderna para monitoramento de logs é o comando \texttt{journalctl -fu kernel}.
 
-O iptables é uma ferramenta poderosa e essencial para a segurança de redes Linux. Sua flexibilidade permite implementar políticas de segurança complexas, desde configurações básicas até setups avançados de alta disponibilidade.
+\section{Comandos Essenciais - Referência Rápida}
+
+\begin{table}[H]
+\centering
+\begin{tabular}{@{}ll@{}}
+\toprule
+\textbf{Comando} & \textbf{Descrição} \\
+\midrule
+\texttt{iptables -L -v -n} & Listar todas as regras com estatísticas \\
+\texttt{iptables -A INPUT -p tcp --dport 80 -j ACCEPT} & Adicionar regra para permitir HTTP \\
+\texttt{iptables -D INPUT 1} & Deletar regra número 1 da cadeia INPUT \\
+\texttt{iptables -F} & Limpar todas as regras \\
+\texttt{iptables -P INPUT DROP} & Definir política padrão da cadeia INPUT \\
+\texttt{iptables-save} & Salvar regras em arquivo \\
+\texttt{iptables-restore < arquivo} & Restaurar regras de arquivo \\
+\texttt{iptables -L -v -n --line-numbers} & Listar regras com números de linha \\
+\texttt{iptables -C INPUT -p tcp --dport 22 -j ACCEPT} & Verificar se regra existe \\
+\bottomrule
+\end{tabular}
+\caption{Comandos essenciais do iptables}
+\end{table}
+
+\section{Considerações Finais}
+
+O netfilter/iptables é um sistema poderoso e essencial para a segurança de redes Linux. O netfilter fornece o framework de firewall no kernel, enquanto o iptables oferece uma interface flexível para gerenciar as regras. Juntos, permitem implementar políticas de segurança complexas, desde configurações básicas até setups avançados de alta disponibilidade.
 
 Principais pontos a considerar:
 
 \begin{itemize}
-    \item \textbf{Complexidade}: A curva de aprendizado pode ser íngreme, mas o domínio da ferramenta é fundamental
-    \item \textbf{Performance}: Regras mal configuradas podem impactar o desempenho da rede
-    \item \textbf{Manutenção}: Configurações devem ser revisadas e atualizadas regularmente
-    \item \textbf{Documentação}: Manter documentação atualizada é crucial para troubleshooting
-    \item \textbf{Testes}: Sempre testar configurações em ambiente controlado antes da produção
+    \item \textbf{Complexidade}: A curva de aprendizado pode ser íngreme, mas o domínio do sistema é fundamental
+    \item \textbf{Performance}: regras mal configuradas podem impactar o desempenho da rede
+    \item \textbf{Manutenção}: configurações devem ser revisadas e atualizadas regularmente
+    \item \textbf{Documentação}: manter documentação atualizada é crucial para troubleshooting
+    \item \textbf{Testes}: sempre testar configurações em ambiente controlado antes da produção
+    \item \textbf{Transição para nftables}: esteja ciente da transição em andamento para nftables
 \end{itemize}
 
 Para ambientes de produção, considere também:
 
 \begin{itemize}
-    \item Implementar failover para alta disponibilidade
-    \item Usar ferramentas de monitoramento como Nagios ou Zabbix
-    \item Implementar alertas automáticos para tentativas de intrusão
-    \item Manter procedimentos de recuperação de desastres
-    \item Treinar equipe de suporte nas configurações implementadas
+    \item implementar failover para alta disponibilidade
+    \item usar ferramentas de monitoramento como Nagios ou Zabbix
+    \item implementar alertas automáticos para tentativas de intrusão
+    \item manter procedimentos de recuperação de desastres
+    \item treinar equipe de suporte nas configurações implementadas
+    \item considerar a migração para nftables em novos projetos
 \end{itemize}
 
-%Incluindo referências bibliográficas
-%\bibliographystyle{plain} %define o estilo         
-%\bibliography{bibliografia} %busca o arquivo
+\section{Referências Bibliográficas}
+
+\begin{thebibliography}{99}
+
+\bibitem{debian-release-notes}
+Debian Project. \textit{Debian 12 "Bookworm" Release Notes}. Disponível em: \url{https://www.debian.org/releases/bookworm/s390x/release-notes.pt-br.pdf}. Acesso em: 2024.
+
+\bibitem{netfilter-documentation}
+Netfilter Project. \textit{Netfilter Documentation}. Disponível em: \url{https://www.netfilter.org/documentation/}. Acesso em: 2024.
+
+\bibitem{wikipedia-debian}
+Wikipedia. \textit{Debian}. Disponível em: \url{https://pt.wikipedia.org/wiki/Debian}. Acesso em: 2024.
+
+\bibitem{ovh-firewall}
+OVHcloud. \textit{Firewall iptables}. Disponível em: \url{https://help.ovhcloud.com/csm/pt-dedicated-servers-firewall-iptables?id=kb_article_view&sysparm_article=KB0043443}. Acesso em: 2024.
+
+\bibitem{hostinger-iptables}
+Hostinger. \textit{Tutorial iptables}. Disponível em: \url{https://www.hostinger.com/br/tutoriais/tutorial-iptables}. Acesso em: 2024.
+
+\bibitem{redhat-iptables}
+Red Hat. \textit{iptables}. Disponível em: \url{https://www.redhat.com/en/blog/iptables}. Acesso em: 2024.
+
+\end{thebibliography}
 
 %inserindo anexos
 %\appendix
